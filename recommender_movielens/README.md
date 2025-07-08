@@ -2,18 +2,18 @@
 
 > Um estudo comparativo completo implementando e avaliando três abordagens de sistemas de recomendação: Filtragem Colaborativa (ALS), Sistema Baseado em Conteúdo e uma estratégia Híbrida.
 
-## 🎯 Objetivo
+##  Objetivo
 
 Este projeto demonstra o desenvolvimento end-to-end de sistemas de recomendação escaláveis, comparando diferentes paradigmas e suas métricas de performance para identificar a melhor estratégia de implementação.
 
-## 📊 Principais Resultados
+##  Principais Resultados
 
 - **Sistema Híbrido** superou ambos os métodos isolados em **todas as métricas**
 - **NDCG@10: 0.8089** (competitivo com state-of-the-art)
 - **Precision@10: 57.14%** vs 56.02% (ALS) e 52.55% (Content-Based)
 - **RMSE < 1.0** demonstrando excelente capacidade preditiva
 
-## 🏗️ Arquitetura do Sistema
+## 🏗 Arquitetura do Sistema
 
 ### 1. Filtragem Colaborativa (ALS)
 - Algoritmo: Alternating Least Squares
@@ -30,7 +30,7 @@ Este projeto demonstra o desenvolvimento end-to-end de sistemas de recomendaçã
 - Parâmetro alpha configurável
 - Mitiga limitações de ambos os sistemas
 
-## 🛠️ Stack Tecnológica
+##  Stack Tecnológica
 
 **Core:**
 - PySpark (Processamento distribuído)
