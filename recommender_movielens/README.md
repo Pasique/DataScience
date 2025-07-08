@@ -13,7 +13,7 @@ Este projeto demonstra o desenvolvimento end-to-end de sistemas de recomendaçã
 - **Precision@10: 57.14%** vs 56.02% (ALS) e 52.55% (Content-Based)
 - **RMSE < 1.0** demonstrando excelente capacidade preditiva
 
-## 🏗 Arquitetura do Sistema
+##  Arquitetura do Sistema
 
 ### 1. Filtragem Colaborativa (ALS)
 - Algoritmo: Alternating Least Squares
