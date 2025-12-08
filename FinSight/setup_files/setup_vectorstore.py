@@ -6,7 +6,7 @@ from langchain_community.vectorstores import Chroma
 
 # Configurações
 PERSIST_DIRECTORY = "./chroma_db"
-DOCS_DIR = "."
+DOCS_DIR = "./setup_files"
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 def setup_vectorstore():
