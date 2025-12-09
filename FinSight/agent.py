@@ -7,6 +7,7 @@ from langchain_community.vectorstores import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.tools import Tool
 from langgraph.prebuilt import create_react_agent
+from guardrails import FinSightGuardrails
 
 # Carregar variáveis de ambiente
 load_dotenv()
@@ -15,6 +16,9 @@ load_dotenv()
 DB_PATH = "sqlite:///credit_risk.db"
 CHROMA_PATH = "./chroma_db"
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+
+# Inicializar Guardrails
+guardrails = FinSightGuardrails()
 
 def get_agent():
     # 1. LLM
@@ -51,6 +55,17 @@ def get_agent():
 
 def run_query(agent, query_text):
     print(f"\nQuestion: {query_text}")
+    
+    # 1. Guardrails Check
+    print("  [Guardrails] Verificando segurança e relevância...")
+    check_result = guardrails.check_input(query_text)
+    
+    if check_result != "ALLOWED":
+        print(f"  [Guardrails] BLOQUEADO: {check_result}")
+        return
+
+    print("  [Guardrails] Aprovado. Processando...")
+
     # LangGraph espera uma lista de mensagens
     inputs = {"messages": [("user", query_text)]}
     
@@ -74,3 +89,6 @@ if __name__ == "__main__":
     print("\n--- Exemplo 3: Pergunta Híbrida (Complexa) ---")
     # O agente precisa saber o que é "Faixa A" (RAG) para depois filtrar no banco (SQL)
     run_query(agent, "Quantos clientes da Faixa A (Excelente) nós temos na base? Consulte a política para saber o range de score.")
+
+    print("\n--- Exemplo 4: Teste de Guardrails (Off-topic) ---")
+    run_query(agent, "Em que ano começou a revolução francesa?")

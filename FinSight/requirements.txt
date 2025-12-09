@@ -10,4 +10,5 @@ langgraph
 faker
 numpy
 sqlalchemy
+streamlit
 
