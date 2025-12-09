@@ -202,14 +202,7 @@ Este projeto é open source e está disponível sob a licença MIT.
 
 **Paulo Siqueira**
 - GitHub: [@Pasique](https://github.com/Pasique)
-- LinkedIn: [Paulo Siqueira](https://linkedin.com/in/seu-perfil)
+- LinkedIn: [Paulo Siqueira](https://www.linkedin.com/in/paulo-henrique-siqueira/)
 
-## Agradecimentos
-
-- OpenAI pela API
-- LangChain pela framework
-- Comunidade open source
-
----
 
 **FinSight AI** - Transformando dados em decisões inteligentes
