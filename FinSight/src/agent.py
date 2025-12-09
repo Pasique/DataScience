@@ -1,4 +1,5 @@
 import os
+import time
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_community.utilities import SQLDatabase
@@ -8,13 +9,17 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.tools import Tool
 from langgraph.prebuilt import create_react_agent
 from guardrails import FinSightGuardrails
+from metrics import MetricsCollector
 
 # Carregar variáveis de ambiente
 load_dotenv()
 
+# Inicializar coletor de métricas
+metrics_collector = MetricsCollector()
+
 # Configurações
-DB_PATH = "sqlite:///credit_risk.db"
-CHROMA_PATH = "./chroma_db"
+DB_PATH = "sqlite:///data/credit_risk.db"
+CHROMA_PATH = "./data/chroma_db"
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 # Inicializar Guardrails
@@ -56,25 +61,98 @@ def get_agent():
 def run_query(agent, query_text):
     print(f"\nQuestion: {query_text}")
     
+    start_time = time.time()
+    query_type = None
+    success = True
+    error_msg = None
+    blocked_reason = None
+    
     # 1. Guardrails Check
     print("  [Guardrails] Verificando segurança e relevância...")
     check_result = guardrails.check_input(query_text)
     
     if check_result != "ALLOWED":
         print(f"  [Guardrails] BLOQUEADO: {check_result}")
+        response_time = time.time() - start_time
+        
+        # Log métrica de bloqueio
+        metrics_collector.log_query(
+            query=query_text,
+            query_type="blocked",
+            response_time=response_time,
+            tokens_used=50,  # Estimativa baixa para guardrails
+            success=False,
+            blocked_reason=check_result
+        )
         return
 
     print("  [Guardrails] Aprovado. Processando...")
 
-    # LangGraph espera uma lista de mensagens
-    inputs = {"messages": [("user", query_text)]}
+    try:
+        # LangGraph espera uma lista de mensagens
+        inputs = {"messages": [("user", query_text)]}
+        
+        # O output contém o estado final, incluindo as mensagens
+        result = agent.invoke(inputs)
+        
+        # A última mensagem é a resposta do assistente
+        last_message = result["messages"][-1]
+        response = last_message.content
+        print(f"Answer: {response}")
+        
+        # Detectar tipo de query de forma mais precisa
+        # Analisar as mensagens intermediárias para ver quais tools foram usados
+        query_type = "unknown"
+        used_sql = False
+        used_rag = False
+        
+        # Verificar mensagens do agente para identificar tools usados
+        for msg in result["messages"]:
+            msg_str = str(msg).lower()
+            if "sql_db" in msg_str or "list_tables" in msg_str or "query_sql" in msg_str:
+                used_sql = True
+            if "search_policy" in msg_str or "glossary" in msg_str or "política" in msg_str:
+                used_rag = True
+        
+        # Classificar baseado nos tools usados
+        if used_sql and used_rag:
+            query_type = "hybrid"
+        elif used_sql:
+            query_type = "sql"
+        elif used_rag:
+            query_type = "rag"
+        else:
+            # Fallback: analisar a resposta
+            response_lower = response.lower()
+            if any(word in response_lower for word in ["select", "database", "tabela", "coluna"]):
+                query_type = "sql"
+            elif any(word in response_lower for word in ["política", "faixa", "glossário", "score de crédito"]):
+                query_type = "rag"
+            else:
+                query_type = "hybrid"
+        
+        # Estimativa de tokens (aproximada)
+        tokens_used = len(query_text.split()) * 1.3 + len(response.split()) * 1.3
+        tokens_used = int(tokens_used * 100)  # Fator de conversão aproximado
+        
+    except Exception as e:
+        success = False
+        error_msg = str(e)
+        query_type = "error"
+        tokens_used = 100
+        print(f"  [ERRO] {error_msg}")
     
-    # O output contém o estado final, incluindo as mensagens
-    result = agent.invoke(inputs)
+    response_time = time.time() - start_time
     
-    # A última mensagem é a resposta do assistente
-    last_message = result["messages"][-1]
-    print(f"Answer: {last_message.content}")
+    # Log métrica
+    metrics_collector.log_query(
+        query=query_text,
+        query_type=query_type or "unknown",
+        response_time=response_time,
+        tokens_used=tokens_used,
+        success=success,
+        error=error_msg
+    )
 
 if __name__ == "__main__":
     print("Inicializando Agente FinSight (Híbrido SQL + RAG - Powered by LangGraph)...")

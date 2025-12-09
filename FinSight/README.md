@@ -68,8 +68,10 @@ OPENAI_API_KEY=sua-chave-aqui
 
 4. **Gere os dados (primeira execução)**
 ```bash
-python setup_files/setup_data.py
-python setup_files/setup_vectorstore.py
+cd scripts
+python setup_data.py
+python setup_vectorstore.py
+cd ..
 ```
 
 ## Como Usar
@@ -89,15 +91,87 @@ Acesse no navegador: `http://localhost:8501`
 
 Execute testes diretos no terminal:
 ```bash
-python agent.py
+cd scripts
+python test_metrics.py
+cd ..
 ```
 
 ## Estrutura do Projeto
 
 ```
 FinSight/
-├── app.py                          # Interface Streamlit
-├── agent.py                        # Agente principal (LangGraph)
+├── src/                            # Código core da aplicação
+│   ├── agent.py                    # Agente principal (LangGraph)
+│   ├── guardrails.py               # Sistema de moderação
+│   └── metrics.py                  # Sistema de coleta de métricas
+├── scripts/                        # Scripts utilitários
+│   ├── setup_data.py               # Gerador de dados sintéticos
+│   ├── setup_vectorstore.py        # Popula o ChromaDB
+│   ├── test_metrics.py             # Script para gerar métricas
+│   └── generate_visualizations.py  # Gerador de gráficos
+├── data/                           # Dados e documentos
+│   ├── policies/                   # Políticas e glossário
+│   │   ├── politica_risco.md
+│   │   └── glossario.md
+│   ├── credit_risk.db              # Banco SQLite (gerado)
+│   └── chroma_db/                  # Vector store (gerado)
+├── outputs/                        # Resultados e métricas
+│   ├── metrics_data.json           # Dados brutos (gerado)
+│   ├── metrics_export.json         # Dados formatados (gerado)
+│   ├── metrics_dashboard.png       # Dashboard (gerado)
+│   └── project_results_linkedin.png # Card redes sociais (gerado)
+### Coletar Métricas de Teste
+
+```bash
+cd scripts
+python test_metrics.py
+cd ..
+```
+
+Isso executará 16+ queries de teste e gerará em `outputs/`:
+- `metrics_data.json` - Dados brutos das métricas
+- `metrics_export.json` - Dados formatados para análise
+O projeto inclui um sistema completo de coleta e análise de métricas:
+
+### Coletar Métricas de Teste
+
+```bash
+python test_metrics.py
+```
+
+Isso executará 16+ queries de teste e gerará:
+- `metrics_data.json` - Dados brutos das métricas
+- `metrics_export.json` - Dados formatados para análise
+
+### Visualizar Métricas
+
+**No Streamlit:**
+- Clique no botão "Ver Métricas do Sistema" na sidebar
+**Gerar gráficos para apresentação:**
+```bash
+# Instalar dependências de visualização
+pip install matplotlib seaborn
+
+# Gerar imagens
+cd scripts
+python generate_visualizations.py
+cd ..
+```
+
+Isso criará em `outputs/`:
+- `metrics_dashboard.png` - Dashboard completo com 6 gráficos
+- `project_results_linkedin.png` - Resumo para redes sociais
+- `metrics_dashboard.png` - Dashboard completo com 6 gráficos
+- `project_results_linkedin.png` - Resumo para redes sociais
+
+### Métricas Coletadas
+
+- Tempo de resposta por query
+- Distribuição de tipos (SQL, RAG, Híbrido, Bloqueado)
+- Taxa de sucesso/erro
+- Impacto dos Guardrails (economia de tokens e custos)
+- Custos totais e por query
+- Timeline de uso
 ├── guardrails.py                   # Sistema de moderação
 ├── requirements.txt                # Dependências
 ├── .env                           # Configurações (criar manualmente)
@@ -173,14 +247,15 @@ FinSight/
   │            │
 ┌─▼───────┐  ┌─▼──────┐
 │SQL Tool │  │RAG Tool│
-│(SQLite) │  │(Chroma)│
-└─────────┘  └────────┘
-```
-
 ## Regenerando os Dados
 
 Para resetar o banco de dados ou atualizar as políticas:
 
+```bash
+cd scripts
+python setup_data.py           # Gera novo banco SQLite
+python setup_vectorstore.py    # Atualiza ChromaDB
+cd ..
 ```bash
 cd setup_files
 python setup_data.py           # Gera novo banco SQLite

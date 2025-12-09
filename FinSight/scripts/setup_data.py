@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import numpy as np
 
 # Configurações
-DB_NAME = "credit_risk.db"
+DB_NAME = "../data/credit_risk.db"
 NUM_CLIENTES = 500  # Tamanho da amostra
 SEED = 42
 
@@ -181,6 +181,10 @@ def generate_data(conn):
     print("Dados gerados com sucesso.")
 
 if __name__ == "__main__":
+    # Muda para o diretório raiz do projeto se estiver em scripts
+    if os.path.basename(os.getcwd()) == "scripts":
+        os.chdir("..")
+    
     if os.path.exists(DB_NAME):
         os.remove(DB_NAME)
     

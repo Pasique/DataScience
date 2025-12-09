@@ -5,17 +5,26 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 
 # Configurações
-PERSIST_DIRECTORY = "./chroma_db"
-DOCS_DIR = "./setup_files"
+PERSIST_DIRECTORY = "../data/chroma_db"
+DOCS_DIR = "../data/policies"
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 def setup_vectorstore():
     print("Iniciando ingestão de documentos para RAG...")
     
+    # Ajustar paths se rodando de scripts/
+    docs_dir = DOCS_DIR
+    persist_dir = PERSIST_DIRECTORY
+    
+    if not os.path.exists(docs_dir):
+        # Tentar path relativo a partir da raiz
+        docs_dir = "data/policies"
+        persist_dir = "data/chroma_db"
+    
     # 1. Carregar Documentos
     documents = []
     for filename in ["politica_risco.md", "glossario.md"]:
-        file_path = os.path.join(DOCS_DIR, filename)
+        file_path = os.path.join(docs_dir, filename)
         if os.path.exists(file_path):
             print(f"Carregando {filename}...")
             loader = TextLoader(file_path)
@@ -72,8 +81,11 @@ def setup_vectorstore():
         print(doc.page_content[:200] + "...")
 
 if __name__ == "__main__":
-    # Garante que estamos rodando no diretório correto
+    # Muda para o diretório raiz do projeto se estiver em scripts
+    if os.path.basename(os.getcwd()) == "scripts":
+        os.chdir("..")
+    
     if os.path.basename(os.getcwd()) != "FinSight":
-        print("Por favor, execute este script de dentro da pasta 'FinSight'.")
+        print("Por favor, execute este script da pasta FinSight ou FinSight/scripts")
     else:
         setup_vectorstore()

@@ -12,12 +12,13 @@ __pycache__/
 venv/
 ENV/
 
-# Database
-*.db
-*.sqlite3
+# Data (gerado pelos scripts)
+data/credit_risk.db
+data/chroma_db/
 
-# Vector Store
-chroma_db/
+# Outputs (métricas e visualizações)
+outputs/*.json
+outputs/*.png
 
 # IDE
 .vscode/
