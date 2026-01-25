@@ -1,5 +1,5 @@
 ###############################################################################
-# BLOQUEIO ESPECIFICO: NAO VERSIONAR heineken_test
+# BLOQUEIO ESPECIFICO: NAO VERSIONAR 
 ###############################################################################
 heineken_test/
 
@@ -7,10 +7,11 @@ heineken_test/
 # PLACEHOLDERS DO PROJETO (PREENCHER DEPOIS)
 ###############################################################################
 # Se quiser ignorar outras pastas de cases/datasets grandes, preencha aqui:
-# other_case_folder/
-# raw_data/
-# private_data/
-# secrets/
+
+
+data/chroma_db/
+exploration_test/
+
 
 # Se existir um arquivo com configuracoes locais, preencha aqui:
 # .env
