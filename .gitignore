@@ -1,0 +1,111 @@
+###############################################################################
+# BLOQUEIO ESPECIFICO: NAO VERSIONAR heineken_test
+###############################################################################
+heineken_test/
+
+###############################################################################
+# PLACEHOLDERS DO PROJETO (PREENCHER DEPOIS)
+###############################################################################
+# Se quiser ignorar outras pastas de cases/datasets grandes, preencha aqui:
+# other_case_folder/
+# raw_data/
+# private_data/
+# secrets/
+
+# Se existir um arquivo com configuracoes locais, preencha aqui:
+# .env
+# config.local.yaml
+# credentials.json
+
+###############################################################################
+# PYTHON: CACHES, BUILD, VENV
+###############################################################################
+__pycache__/
+*.py[cod]
+*.pyd
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Type checking / lint caches
+.mypy_cache/
+.ruff_cache/
+.pyright/
+.pytype/
+
+###############################################################################
+# JUPYTER / IPYTHON
+###############################################################################
+.ipynb_checkpoints/
+profile_default/
+ipython_config.py
+
+###############################################################################
+# DATA SCIENCE: DADOS, MODELOS, ARTEFATOS
+###############################################################################
+# Dados locais (preencha conforme sua estrutura)
+data/
+datasets/
+raw/
+processed/
+
+# Modelos e artefatos
+models/
+artifacts/
+outputs/
+reports/
+
+# Logs
+logs/
+*.log
+
+###############################################################################
+# IDEs / EDITORES
+###############################################################################
+# VS Code (mantem settings uteis, ignora estado local)
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# JetBrains
+.idea/
+
+###############################################################################
+# SISTEMA OPERACIONAL
+###############################################################################
+.DS_Store
+Thumbs.db
+
+###############################################################################
+# SEGURANCA: SEGREDOS E CHAVES (PADRAO)
+###############################################################################
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+credentials.*
+secrets.*
+*_secret.*
