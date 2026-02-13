@@ -5,20 +5,26 @@ __pycache__/
 *.pyd
 *.py[cod]
 *$py.class
+*.so
+.Python
 
 # Environment
 .env
 .venv
 venv/
 ENV/
+env/
 
 # Data (gerado pelos scripts)
 data/credit_risk.db
 data/chroma_db/
 
-# Outputs (métricas e visualizações)
-outputs/*.json
-outputs/*.png
+# Outputs - métricas geradas em runtime (não commitar)
+outputs/metrics_data.json
+outputs/metrics_export.json
+
+# Outputs - imagens exemplo (podem ser commitadas)
+# outputs/*.png - comentado para manter imagens exemplo
 
 # IDE
 .vscode/
@@ -30,3 +36,11 @@ outputs/*.png
 # OS
 .DS_Store
 Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
