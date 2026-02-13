@@ -167,7 +167,8 @@ if prompt:
                     response_time=response_time,
                     tokens_used=50,
                     success=False,
-                    blocked_reason=check_result
+                    blocked_reason=check_result,
+                    sql_query=None
                 )
             else:
                 status.update(label="✅ Input Seguro e Relevante", state="complete")
@@ -184,14 +185,22 @@ if prompt:
                     message_placeholder.markdown(response)
                     st.session_state.messages.append({"role": "assistant", "content": response})
                     
-                    # Detecta tipo de query baseado nas tools usadas pelo agente
+                    # Detecta tipo de query baseado nas tools usadas pelo agente e extrai SQL
                     used_sql = False
                     used_rag = False
+                    sql_query = None
                     
                     for msg in result["messages"]:
                         msg_content = str(msg).lower()
                         if any(term in msg_content for term in ["sql_db", "list_tables", "query_sql"]):
                             used_sql = True
+                            # Tenta extrair query SQL
+                            if "select" in msg_content:
+                                import re
+                                sql_pattern = r"(SELECT\s+.*?)(?:;|\n|$|'|\")"
+                                matches = re.findall(sql_pattern, str(msg), re.IGNORECASE | re.DOTALL)
+                                if matches:
+                                    sql_query = matches[0].strip()
                         if any(term in msg_content for term in ["search_policy", "glossary", "política"]):
                             used_rag = True
                     
@@ -227,5 +236,6 @@ if prompt:
                     response_time=response_time,
                     tokens_used=tokens_used,
                     success=success,
-                    error=error_msg
+                    error=error_msg,
+                    sql_query=sql_query if 'sql_query' in locals() else None
                 )

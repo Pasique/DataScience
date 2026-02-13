@@ -81,7 +81,8 @@ def run_query(agent, query_text):
             response_time=response_time,
             tokens_used=50,
             success=False,
-            blocked_reason=check_result
+            blocked_reason=check_result,
+            sql_query=None
         )
         return
 
@@ -95,14 +96,24 @@ def run_query(agent, query_text):
         response = last_message.content
         print(f"Answer: {response}")
         
-        # Identifica tipo de query pelos tools usados
+        # Identifica tipo de query pelos tools usados e extrai SQL
         used_sql = False
         used_rag = False
+        sql_query = None
         
         for msg in result["messages"]:
             msg_str = str(msg).lower()
             if any(term in msg_str for term in ["sql_db", "list_tables", "query_sql"]):
                 used_sql = True
+                # Tenta extrair query SQL
+                if "select" in msg_str:
+                    # Procura por SELECT queries
+                    content = str(msg)
+                    import re
+                    sql_pattern = r"(SELECT\s+.*?)(?:;|\n|$|'|\")"
+                    matches = re.findall(sql_pattern, content, re.IGNORECASE | re.DOTALL)
+                    if matches:
+                        sql_query = matches[0].strip()
             if any(term in msg_str for term in ["search_policy", "glossary", "política"]):
                 used_rag = True
         
@@ -134,7 +145,8 @@ def run_query(agent, query_text):
         response_time=response_time,
         tokens_used=tokens_used,
         success=success,
-        error=error_msg
+        error=error_msg,
+        sql_query=sql_query if 'sql_query' in locals() else None
     )
 
 if __name__ == "__main__":

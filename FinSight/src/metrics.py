@@ -21,6 +21,7 @@ class QueryMetric:
     success: bool
     error: str = None
     blocked_reason: str = None
+    sql_query: str = None
 
 
 class MetricsCollector:
@@ -50,7 +51,8 @@ class MetricsCollector:
                   tokens_used: int = 0,
                   success: bool = True,
                   error: str = None,
-                  blocked_reason: str = None):
+                  blocked_reason: str = None,
+                  sql_query: str = None):
         """Registra uma query executada."""
         # Custo aproximado GPT-4o-mini: $0.15/1M input + $0.60/1M output
         # Assumindo split 50/50
@@ -65,7 +67,8 @@ class MetricsCollector:
             cost_usd=cost_usd,
             success=success,
             error=error,
-            blocked_reason=blocked_reason
+            blocked_reason=blocked_reason,
+            sql_query=sql_query
         )
         
         self.metrics.append(asdict(metric))
@@ -226,9 +229,9 @@ if __name__ == "__main__":
     
     print("Simulando queries para teste...\n")
     
-    collector.log_query("Quantos clientes temos?", "sql", 1.2, 850, True)
-    collector.log_query("Qual a taxa de juros?", "rag", 0.8, 650, True)
-    collector.log_query("Clientes SP na Faixa A?", "hybrid", 2.1, 1200, True)
-    collector.log_query("Receita de bolo", "blocked", 0.1, 50, False, blocked_reason="off-topic")
+    collector.log_query(query="Quantos clientes temos?", query_type="sql", response_time=1.2, tokens_used=850, success=True, sql_query="SELECT COUNT(*) FROM clientes")
+    collector.log_query(query="Qual a taxa de juros?", query_type="rag", response_time=0.8, tokens_used=650, success=True)
+    collector.log_query(query="Clientes SP na Faixa A?", query_type="hybrid", response_time=2.1, tokens_used=1200, success=True, sql_query="SELECT COUNT(*) FROM clientes WHERE estado = 'SP' AND faixa_risco = 'A'")
+    collector.log_query(query="Receita de bolo", query_type="blocked", response_time=0.1, tokens_used=50, success=False, blocked_reason="off-topic")
     
     print(collector.get_detailed_report())
