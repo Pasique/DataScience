@@ -2,11 +2,11 @@ langchain
 langchain-community
 langchain-huggingface
 langchain-openai
+langchain-chroma
 chromadb
 sentence-transformers
 python-dotenv
-langflow
-langgraph
+langgraph>=0.2.20
 faker
 numpy
 sqlalchemy

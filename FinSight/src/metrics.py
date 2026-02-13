@@ -1,7 +1,4 @@
-"""
-Sistema de coleta de métricas e resultados do FinSight AI.
-Rastreia performance, custos, tipos de queries e efetividade dos guardrails.
-"""
+"""Sistema de métricas para rastrear performance e custos do FinSight."""
 
 import json
 import time
@@ -14,11 +11,11 @@ import statistics
 
 @dataclass
 class QueryMetric:
-    """Métrica de uma query individual."""
+    """Dados de uma query individual."""
     timestamp: str
     query: str
     query_type: str  # 'sql', 'rag', 'hybrid', 'blocked'
-    response_time: float  # segundos
+    response_time: float
     tokens_used: int
     cost_usd: float
     success: bool
@@ -31,17 +28,18 @@ class MetricsCollector:
     
     def __init__(self, metrics_file: str = "outputs/metrics_data.json"):
         self.metrics_file = Path(metrics_file)
+        self.metrics_file.parent.mkdir(parents=True, exist_ok=True)
         self.metrics: List[Dict] = self._load_metrics()
         
     def _load_metrics(self) -> List[Dict]:
-        """Carrega métricas existentes."""
+        """Carrega métricas do disco."""
         if self.metrics_file.exists():
             with open(self.metrics_file, 'r', encoding='utf-8') as f:
                 return json.load(f)
         return []
     
     def _save_metrics(self):
-        """Salva métricas em disco."""
+        """Persiste métricas em disco."""
         with open(self.metrics_file, 'w', encoding='utf-8') as f:
             json.dump(self.metrics, f, indent=2, ensure_ascii=False)
     
@@ -53,25 +51,14 @@ class MetricsCollector:
                   success: bool = True,
                   error: str = None,
                   blocked_reason: str = None):
-        """
-        Registra uma query no sistema de métricas.
-        
-        Args:
-            query: Pergunta do usuário
-            query_type: 'sql', 'rag', 'hybrid', 'blocked'
-            response_time: Tempo de resposta em segundos
-            tokens_used: Tokens consumidos (estimativa)
-            success: Se a query foi bem-sucedida
-            error: Mensagem de erro (se houver)
-            blocked_reason: Razão do bloqueio (se bloqueada)
-        """
-        # Calcula custo aproximado (GPT-4o-mini: $0.15/1M input, $0.60/1M output)
-        # Assumindo 50/50 input/output
+        """Registra uma query executada."""
+        # Custo aproximado GPT-4o-mini: $0.15/1M input + $0.60/1M output
+        # Assumindo split 50/50
         cost_usd = (tokens_used / 1_000_000) * 0.375
         
         metric = QueryMetric(
             timestamp=datetime.now().isoformat(),
-            query=query[:100],  # Limita tamanho para privacidade
+            query=query[:100],  # Trunca para privacidade
             query_type=query_type,
             response_time=response_time,
             tokens_used=tokens_used,
@@ -85,7 +72,7 @@ class MetricsCollector:
         self._save_metrics()
     
     def get_summary(self) -> Dict[str, Any]:
-        """Retorna resumo estatístico das métricas."""
+        """Gera resumo estatístico das métricas coletadas."""
         if not self.metrics:
             return {"error": "Nenhuma métrica coletada ainda"}
         
@@ -93,20 +80,18 @@ class MetricsCollector:
         successful = sum(1 for m in self.metrics if m['success'])
         blocked = sum(1 for m in self.metrics if m['query_type'] == 'blocked')
         
-        # Separar queries por tipo (excluindo bloqueadas)
         executed_queries = [m for m in self.metrics if m['query_type'] != 'blocked']
         
         response_times = [m['response_time'] for m in executed_queries]
         total_tokens = sum(m['tokens_used'] for m in self.metrics)
         total_cost = sum(m['cost_usd'] for m in self.metrics)
         
-        # Distribuição por tipo
         type_distribution = {}
         for m in self.metrics:
             qtype = m['query_type']
             type_distribution[qtype] = type_distribution.get(qtype, 0) + 1
         
-        # Análise por tipo de query (excluindo bloqueadas)
+        # Análise detalhada por tipo
         analysis_by_type = {}
         for qtype in ['sql', 'rag', 'hybrid']:
             type_metrics = [m for m in self.metrics if m['query_type'] == qtype]
@@ -143,7 +128,7 @@ class MetricsCollector:
             "guardrails": {
                 "total_bloqueadas": blocked,
                 "taxa_bloqueio": f"{(blocked/total_queries*100):.1f}%",
-                "economia_estimada_tokens": blocked * 1500,  # Estimativa conservadora
+                "economia_estimada_tokens": blocked * 1500,
                 "economia_estimada_usd": f"${(blocked * 1500 * 0.375 / 1_000_000):.4f}"
             },
             "distribuicao_queries": type_distribution,
@@ -237,11 +222,9 @@ class MetricsCollector:
 
 
 if __name__ == "__main__":
-    # Teste do sistema de métricas
     collector = MetricsCollector()
     
-    # Simula algumas queries para demonstração
-    print("Simulando coleta de métricas...\n")
+    print("Simulando queries para teste...\n")
     
     collector.log_query("Quantos clientes temos?", "sql", 1.2, 850, True)
     collector.log_query("Qual a taxa de juros?", "rag", 0.8, 650, True)

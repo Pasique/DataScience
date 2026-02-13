@@ -3,13 +3,11 @@ import os
 import sys
 import time
 
-# Adiciona o diretório src ao path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from agent import get_agent, guardrails
 from metrics import MetricsCollector
 
-# Inicializar coletor de métricas
 if "metrics_collector" not in st.session_state:
     st.session_state.metrics_collector = MetricsCollector()
 
@@ -17,36 +15,44 @@ st.set_page_config(page_title="FinSight AI", page_icon="💰", layout="wide")
 
 st.title("💰 FinSight AI Assistant")
 st.markdown("""
-Seu assistente especialista em **Risco de Crédito** e **Análise Financeira**.
-Pergunte sobre dados de clientes, políticas de risco ou faça análises complexas.
+Assistente especializado em **Análise de Risco de Crédito**. Faça perguntas sobre dados de clientes,
+políticas de risco ou análises combinadas.
 """)
 
-# Inicializar Session State
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 if "agent" not in st.session_state:
-    with st.spinner("Inicializando agente..."):
+    with st.spinner("Carregando agente..."):
         st.session_state.agent = get_agent()
 
-# Sidebar com informações
 with st.sidebar:
-    st.header("Sobre")
-    st.markdown("""
-    Este assistente utiliza:
-    - **LangChain & LangGraph** para orquestração.
-    - **RAG (ChromaDB)** para consulta de políticas.
-    - **SQL Agent** para consulta de dados estruturados.
-    - **Guardrails** para segurança e moderação.
-    """)
+    st.header("💡 Exemplos de Perguntas")
+    
+    if st.button("📊 Quantos clientes temos em SP?"):
+        st.session_state.example_query = "Quantos clientes temos em SP?"
+    
+    if st.button("💰 Taxa para score 650?"):
+        st.session_state.example_query = "Qual a taxa de juros para um cliente com score 650?"
+    
+    if st.button("🎯 Clientes Faixa A no RJ?"):
+        st.session_state.example_query = "Quantos clientes da Faixa A temos no Rio de Janeiro?"
     
     st.divider()
+    st.header("⚙️ Sistema")
     
-    # Botão de métricas
-    if st.button("📊 Ver Métricas do Sistema"):
+    st.markdown("""
+    **Stack Técnica:**
+    - LangGraph (orquestração)
+    - RAG com ChromaDB
+    - SQL Agent
+    - Guardrails customizado
+    """)
+    
+    if st.button("📊 Ver Métricas"):
         st.session_state.show_metrics = True
     
-    if st.button("Limpar Conversa"):
+    if st.button("🗑️ Limpar Chat"):
         st.session_state.messages = []
         st.rerun()
 
@@ -111,20 +117,33 @@ if "show_metrics" in st.session_state and st.session_state.show_metrics:
         if st.button("Fechar Métricas"):
             st.session_state.show_metrics = False
             st.rerun()
-        
+
+# Exibir histórico de mensagens
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# Processar query de exemplo se houver
+if "example_query" in st.session_state:
+    prompt = st.session_state.example_query
+    del st.session_state.example_query
+    st.rerun()
+else:
+    prompt = None
+
 # Input do usuário
-if prompt := st.chat_input("Digite sua pergunta (ex: Qual a taxa para score 600? ou Quantos clientes em SP?)"):
-    # Adicionar mensagem do usuário ao histórico
+if not prompt:
+    prompt = st.chat_input("Digite sua pergunta...")
+
+if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Processamento
     start_time = time.time()
     query_type = None
     success = True
     error_msg = None
-    blocked_reason = None
     
     with st.chat_message("assistant"):
         # Placeholder para resposta
@@ -158,30 +177,37 @@ if prompt := st.chat_input("Digite sua pergunta (ex: Qual a taxa para score 600?
         if is_safe:
             with st.spinner("🤖 Analisando dados e políticas..."):
                 try:
-                    # O agente do LangGraph espera um dicionário com a chave "messages"
                     inputs = {"messages": [("user", prompt)]}
-                    
-                    # Invoke do agente
                     result = st.session_state.agent.invoke(inputs)
-                    
-                    # A resposta final é a última mensagem da lista
                     response = result["messages"][-1].content
                     
                     message_placeholder.markdown(response)
                     st.session_state.messages.append({"role": "assistant", "content": response})
                     
-                    # Detectar tipo de query
-                    response_lower = response.lower()
-                    if "select" in response_lower or "database" in response_lower or "sql" in response_lower:
+                    # Detecta tipo de query baseado nas tools usadas pelo agente
+                    used_sql = False
+                    used_rag = False
+                    
+                    for msg in result["messages"]:
+                        msg_content = str(msg).lower()
+                        if any(term in msg_content for term in ["sql_db", "list_tables", "query_sql"]):
+                            used_sql = True
+                        if any(term in msg_content for term in ["search_policy", "glossary", "política"]):
+                            used_rag = True
+                    
+                    if used_sql and used_rag:
+                        query_type = "hybrid"
+                    elif used_sql:
                         query_type = "sql"
-                    elif "política" in response_lower or "glossário" in response_lower or "faixa" in response_lower:
+                    elif used_rag:
                         query_type = "rag"
                     else:
-                        query_type = "hybrid"
+                        query_type = "unknown"
                     
-                    # Estimativa de tokens
-                    tokens_used = len(prompt.split()) * 1.3 + len(response.split()) * 1.3
-                    tokens_used = int(tokens_used * 100)
+                    # Estimativa mais precisa de tokens (OpenAI usa ~1.3 tokens por palavra)
+                    prompt_tokens = int(len(prompt.split()) * 1.3)
+                    response_tokens = int(len(response.split()) * 1.3)
+                    tokens_used = (prompt_tokens + response_tokens) * 2  # Fator para mensagens de sistema e contexto
                     
                 except Exception as e:
                     success = False
@@ -203,42 +229,3 @@ if prompt := st.chat_input("Digite sua pergunta (ex: Qual a taxa para score 600?
                     success=success,
                     error=error_msg
                 )
-        st.markdown(prompt)
-
-    # Processamento
-    with st.chat_message("assistant"):
-        # Placeholder para resposta
-        message_placeholder = st.empty()
-        
-        # 1. Guardrails Check
-        is_safe = False
-        with st.status("🛡️ Verificando Guardrails...", expanded=False) as status:
-            check_result = guardrails.check_input(prompt)
-            if check_result != "ALLOWED":
-                status.update(label="🚫 Bloqueado pelo Guardrails", state="error")
-                response = f"🚫 **Bloqueado**: {check_result}"
-                message_placeholder.markdown(response)
-                st.session_state.messages.append({"role": "assistant", "content": response})
-            else:
-                status.update(label="✅ Input Seguro e Relevante", state="complete")
-                is_safe = True
-
-        # 2. Agent Execution (apenas se passou no guardrails)
-        if is_safe:
-            with st.spinner("🤖 Analisando dados e políticas..."):
-                try:
-                    # O agente do LangGraph espera um dicionário com a chave "messages"
-                    inputs = {"messages": [("user", prompt)]}
-                    
-                    # Invoke do agente
-                    result = st.session_state.agent.invoke(inputs)
-                    
-                    # A resposta final é a última mensagem da lista
-                    response = result["messages"][-1].content
-                    
-                    message_placeholder.markdown(response)
-                    st.session_state.messages.append({"role": "assistant", "content": response})
-                except Exception as e:
-                    error_msg = f"❌ Ocorreu um erro ao processar sua solicitação: {str(e)}"
-                    message_placeholder.error(error_msg)
-                    st.session_state.messages.append({"role": "assistant", "content": error_msg})

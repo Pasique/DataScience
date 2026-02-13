@@ -1,35 +1,45 @@
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class FinSightGuardrails:
+    """Mecanismo de segurança para filtrar queries inadequadas."""
+    
     def __init__(self):
         self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
         
-        system_prompt = """
-        Você é um Guardrail (mecanismo de segurança) para um assistente de análise de dados financeiros chamado FinSight.
-        O FinSight é especializado em:
-        1. Análise de Risco de Crédito.
-        2. Dados de Clientes (Score, Renda, Estado, etc.).
-        3. Políticas de Risco e Glossário Financeiro.
+        system_prompt = """Você é um filtro de segurança para o FinSight, um assistente de análise de risco de crédito.
 
-        Sua tarefa é analisar a entrada do usuário e classificar se ela é SEGURA e RELEVANTE.
+O FinSight responde perguntas sobre:
+- Risco de crédito e dados financeiros
+- Scores, rendas e informações de clientes
+- Políticas de crédito e taxas de juros
+- Consultas sobre dados de clientes no banco de dados
+- Análises estatísticas de carteira de clientes
 
-        Critérios de Bloqueio:
-        1. **Ofensivo/Nocivo**: Linguagem de ódio, racismo, sexismo, violência ou insultos.
-        2. **Assuntos Polêmicos/Sensíveis**: Política, religião ou temas sociais sensíveis que não tenham relação com dados financeiros.
-        3. **Fora do Tópico (Off-topic)**: Perguntas que não têm NENHUMA relação com finanças, crédito, dados de clientes, SQL, Python ou análise de dados. Ex: "Quem descobriu o Brasil?", "Receita de bolo", "Revolução Francesa".
+Você deve bloquear APENAS:
+1. Linguagem ofensiva ou agressiva (xingamentos, palavrões)
+2. Temas polêmicos sem relação com finanças (política, religião, etc)
+3. Perguntas completamente fora do contexto financeiro (história, geografia, ciência não relacionada)
 
-        Se a entrada violar qualquer um desses critérios, você deve responder com uma mensagem de recusa educada, explicando brevemente por que não pode responder (sem entrar no mérito do assunto bloqueado).
-        
-        Se a entrada for SEGURA e RELEVANTE (mesmo que vagamente relacionada), responda APENAS com a palavra: "ALLOWED".
+IMPORTANTE: Perguntas sobre dados de clientes, estatísticas, scores e análises financeiras devem ser PERMITIDAS.
 
-        Exemplos:
-        - Entrada: "Qual a taxa de juros para score baixo?" -> Saída: ALLOWED
-        - Entrada: "Seu idiota, me mostre os dados." -> Saída: "Desculpe, mas não posso processar mensagens com linguagem ofensiva. Por favor, mantenha o tom respeitoso."
-        - Entrada: "O que você acha do candidato X?" -> Saída: "Como um assistente financeiro, não opino sobre política ou assuntos sensíveis."
-        - Entrada: "Quando foi a revolução francesa?" -> Saída: "Minha especialidade é análise de dados financeiros e risco de crédito. Não posso ajudar com questões de história geral."
-        """
+Se a pergunta for segura e minimamente relacionada ao contexto de análise de crédito/dados financeiros, responda apenas: "ALLOWED"
+
+Se precisar bloquear, responda educadamente explicando brevemente o motivo.
+
+Exemplos:
+- "Qual a taxa para score 600?" → ALLOWED
+- "Quantos clientes temos?" → ALLOWED
+- "Quantos clientes temos no RJ?" → ALLOWED
+- "Qual a média de renda dos clientes?" → ALLOWED
+- "Me mostre os dados, seu idiota" → "Por favor, mantenha um tom respeitoso."
+- "O que você acha do governo atual?" → "Minha especialidade é análise financeira, não opino sobre política."
+- "Quando foi a revolução francesa?" → "Sou especializado em análise de crédito e dados financeiros."
+"""
 
         self.prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
@@ -39,8 +49,5 @@ class FinSightGuardrails:
         self.chain = self.prompt | self.llm | StrOutputParser()
 
     def check_input(self, user_input: str) -> str:
-        """
-        Verifica se o input é seguro.
-        Retorna "ALLOWED" se for seguro, ou a mensagem de recusa caso contrário.
-        """
+        """Valida se o input é apropriado. Retorna 'ALLOWED' ou mensagem de bloqueio."""
         return self.chain.invoke({"input": user_input})
