@@ -15,8 +15,9 @@ load_dotenv()
 
 metrics_collector = MetricsCollector()
 
-DB_PATH = "sqlite:///data/credit_risk.db"
-CHROMA_PATH = "./data/chroma_db"
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_PATH = f"sqlite:///{_BASE_DIR}/data/credit_risk.db"
+CHROMA_PATH = os.path.join(_BASE_DIR, "data", "chroma_db")
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 guardrails = FinSightGuardrails()
