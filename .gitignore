@@ -112,3 +112,5 @@ Thumbs.db
 credentials.*
 secrets.*
 *_secret.*
+
+CLAUDE.md
